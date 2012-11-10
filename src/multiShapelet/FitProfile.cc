@@ -41,9 +41,10 @@ PTR(algorithms::AlgorithmControl) FitProfileControl::_clone() const {
 PTR(algorithms::Algorithm) FitProfileControl::_makeAlgorithm(
     afw::table::Schema & schema,
     PTR(daf::base::PropertyList) const & metadata,
-    algorithms::AlgorithmControlMap const & others
+    algorithms::AlgorithmControlMap const & others,
+    bool isForced
 ) const {
-    return boost::make_shared<FitProfileAlgorithm>(*this, boost::ref(schema), others);
+    return boost::make_shared<FitProfileAlgorithm>(*this, boost::ref(schema), others, isForced);
 }
 
 //------------ FitProfileModel ------------------------------------------------------------------------------
@@ -133,7 +134,8 @@ shapelet::MultiShapeletFunction FitProfileModel::asMultiShapelet(
 FitProfileAlgorithm::FitProfileAlgorithm(
     FitProfileControl const & ctrl,
     afw::table::Schema & schema,
-    algorithms::AlgorithmControlMap const & others
+    algorithms::AlgorithmControlMap const & others,
+    bool isForced
 ) :
     algorithms::Algorithm(ctrl),
     _fluxKeys(
@@ -158,34 +160,30 @@ FitProfileAlgorithm::FitProfileAlgorithm(
             ctrl.name + ".chisq",
             "reduced chi^2"
         )),
-    _flagMaxIterKey(
-        schema.addField<afw::table::Flag>(
-            ctrl.name + ".flags.maxiter",
-            "set if the optimizer ran into the maximum number of iterations limit"
-        )),
-    _flagTinyStepKey(
-        schema.addField<afw::table::Flag>(
-            ctrl.name + ".flags.tinystep",
-            "set if the optimizer step or trust region got so small no progress could be made"
-        )),
-    _flagMinRadiusKey(
-        schema.addField<afw::table::Flag>(
-            ctrl.name + ".flags.constraint.r",
-            "set if the best-fit radius was the minimum allowed by the constraint (not a failure)"
-        )),
-    _flagMinAxisRatioKey(
-        schema.addField<afw::table::Flag>(
-            ctrl.name + ".flags.constraint.q",
-            "set if the best-fit ellipticity was the maximum allowed by the constraint"
-        )),
-    _flagLargeAreaKey(
-        schema.addField<afw::table::Flag>(
-            ctrl.name + ".flags.largearea",
-            "set if the best-fit half-light ellipse area is larger than the number of pixels used"
-
-        )),
     _psfCtrl()
 {
+    if (!isForced) {
+        _flagMaxIterKey = schema.addField<afw::table::Flag>(
+            ctrl.name + ".flags.maxiter",
+            "set if the optimizer ran into the maximum number of iterations limit"
+        );
+        _flagTinyStepKey = schema.addField<afw::table::Flag>(
+                ctrl.name + ".flags.tinystep",
+                "set if the optimizer step or trust region got so small no progress could be made"
+            );
+        _flagMinRadiusKey = schema.addField<afw::table::Flag>(
+                ctrl.name + ".flags.constraint.r",
+                "set if the best-fit radius was the minimum allowed by the constraint (not a failure)"
+            );
+        _flagMinAxisRatioKey = schema.addField<afw::table::Flag>(
+                ctrl.name + ".flags.constraint.q",
+                "set if the best-fit ellipticity was the maximum allowed by the constraint"
+            );
+        _flagLargeAreaKey = schema.addField<afw::table::Flag>(
+            ctrl.name + ".flags.largearea",
+            "set if the best-fit half-light ellipse area is larger than the number of pixels used"  
+        );
+    }
     algorithms::AlgorithmControlMap::const_iterator i = others.find(ctrl.psfName);
     if (i == others.end()) {
         throw LSST_EXCEPT(
@@ -236,14 +234,15 @@ ModelInputHandler FitProfileAlgorithm::adjustInputs(
     afw::geom::ellipses::Quadrupole & shape,
     afw::detection::Footprint const & footprint,
     afw::image::MaskedImage<PixelT> const & image,
-    afw::geom::Point2D const & center
+    afw::geom::Point2D const & center,
+    bool fixShape
 ) {
     MultiGaussianObjective::EllipseCore ellipse(shape);
     if (!(ellipse.getArea() > 0.0)) {  // phrasing comparison this way also guards against NaN
         ellipse = psfModel.ellipse;
         ellipse.scale(ctrl.minInitialRadius);
     } else {
-        if (ctrl.deconvolveShape) {
+        if (!fixShape && ctrl.deconvolveShape) {
             try {
                 ellipse = ctrl.getMultiGaussian().deconvolve(
                     shape, psfModel.ellipse, psfModel.getMultiGaussian()
@@ -254,16 +253,18 @@ ModelInputHandler FitProfileAlgorithm::adjustInputs(
             }
         }
     }
-    // We never want to start with an ellipse smaller than the PSF or an ellipticity
-    // on the constraint, because we might never find our way out.
-    std::pair<bool,bool> constrained = MultiGaussianObjective::constrainEllipse(
-        ellipse, psfModel.ellipse.getTraceRadius() * ctrl.minInitialRadius, ctrl.minAxisRatio
-    );
-    if (constrained.first || constrained.second) {
-        ellipse = psfModel.ellipse;
-        ellipse.scale(ctrl.minInitialRadius);
+    if (!fixShape) {
+        // We never want to start with an ellipse smaller than the PSF or an ellipticity
+        // on the constraint, because we might never find our way out.
+        std::pair<bool,bool> constrained = MultiGaussianObjective::constrainEllipse(
+            ellipse, psfModel.ellipse.getTraceRadius() * ctrl.minInitialRadius, ctrl.minAxisRatio
+        );
+        if (constrained.first || constrained.second) {
+            ellipse = psfModel.ellipse;
+            ellipse.scale(ctrl.minInitialRadius);
+        }
+        shape = ellipse;
     }
-    shape = ellipse;
     afw::image::MaskPixel badPixelMask = afw::image::Mask<>::getPlaneBitMask(ctrl.badMaskPlanes);
     if (ctrl.radiusInputFactor > 0.0) {
         std::vector<afw::geom::ellipses::Ellipse> boundsEllipses;
@@ -374,6 +375,16 @@ void FitProfileAlgorithm::_apply(
     source.set(_flagMinAxisRatioKey, model.flagMinAxisRatio);
     source.set(_flagLargeAreaKey, model.flagLargeArea);
 
+    _fitPsfFactor(source, exposure, center, psfModel);
+}
+
+template <typename PixelT>
+void FitProfileAlgorithm::_fitPsfFactor(
+    afw::table::SourceRecord & source,
+    afw::image::Exposure<PixelT> const & exposure,
+    afw::geom::Point2D const & center,
+    FitPsfModel const & psfModel
+) const {
     source.set(_fluxCorrectionKeys.psfFactorFlag, true);
     PTR(afw::image::Image<afw::math::Kernel::Pixel>) psfImage = exposure.getPsf()->computeImage(center);
     ModelInputHandler psfInputs(*psfImage, center, psfImage->getBBox(afw::image::PARENT));
@@ -381,9 +392,56 @@ void FitProfileAlgorithm::_apply(
     psfEllipse.scale(getControl().minInitialRadius);
     FitProfileModel psfProfileModel = apply(getControl(), psfModel, psfEllipse, psfInputs);
     source.set(_fluxCorrectionKeys.psfFactor, psfProfileModel.flux);
-    source.set(_psfEllipseKey, model.ellipse);
+    source.set(_psfEllipseKey, psfProfileModel.ellipse);
     source.set(_fluxCorrectionKeys.psfFactorFlag, psfProfileModel.fluxFlag);
+}
 
+template <typename PixelT>
+void FitProfileAlgorithm::_applyForced(
+    afw::table::SourceRecord & source,
+    afw::image::Exposure<PixelT> const & exposure,
+    afw::geom::Point2D const & center,
+    afw::table::SourceRecord const & reference,
+    afw::geom::AffineTransform const & refToMeas
+) const {
+   source.set(_fluxKeys.flag, true);
+    if (!exposure.hasPsf()) {
+        throw LSST_EXCEPT(
+            pex::exceptions::LogicErrorException,
+            "Cannot run FitProfileAlgorithm without a PSF."
+        );
+    }
+    FitPsfModel psfModel(*_psfCtrl, source);
+    if (psfModel.hasFailed() || !(psfModel.ellipse.getArea() > 0.0)) {
+        throw LSST_EXCEPT(
+            pex::exceptions::RuntimeErrorException,
+            "PSF shapelet fit failed; cannot fit galaxy model."
+        );
+    }
+
+    FitProfileModel model(getControl(), reference);
+    if (model.fluxFlag) {
+        throw LSST_EXCEPT(
+            pex::exceptions::RuntimeErrorException,
+            "Reference galaxy model fit failed; cannot run forced modeling."
+        );
+    }
+    model.ellipse = model.ellipse.transform(refToMeas.getLinear());
+
+    ModelInputHandler inputs = adjustInputs(
+        getControl(), psfModel, model.ellipse, *source.getFootprint(),
+        exposure.getMaskedImage(), center, true
+    );
+
+    fitShapeletTerms(getControl(), psfModel, inputs, model);
+
+    source.set(_fluxKeys.meas, model.flux);
+    source.set(_fluxKeys.err, model.fluxErr);
+    source.set(_fluxKeys.flag, model.fluxFlag);
+    source.set(_ellipseKey, model.ellipse);
+    source.set(_chisqKey, model.chisq);
+
+    _fitPsfFactor(source, exposure, center, psfModel);
 }
 
 LSST_MEAS_ALGORITHM_PRIVATE_IMPLEMENTATION(FitProfileAlgorithm);

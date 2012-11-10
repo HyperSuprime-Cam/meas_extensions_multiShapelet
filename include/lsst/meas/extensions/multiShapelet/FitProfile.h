@@ -62,7 +62,8 @@ public:
     PTR(FitProfileAlgorithm) makeAlgorithm(
         afw::table::Schema & schema,
         PTR(daf::base::PropertyList) const & metadata = PTR(daf::base::PropertyList)(),
-        algorithms::AlgorithmControlMap const & others = algorithms::AlgorithmControlMap()
+        algorithms::AlgorithmControlMap const & others = algorithms::AlgorithmControlMap(),
+        bool isForced = false
     ) const;
 
     MultiGaussian const & getMultiGaussian() const { return MultiGaussianRegistry::lookup(profile); }
@@ -86,7 +87,8 @@ private:
     virtual PTR(algorithms::Algorithm) _makeAlgorithm(
         afw::table::Schema & schema,
         PTR(daf::base::PropertyList) const & metadata,
-        algorithms::AlgorithmControlMap const & other
+        algorithms::AlgorithmControlMap const & other,
+        bool isForced
     ) const;
 };
 
@@ -155,7 +157,8 @@ public:
     FitProfileAlgorithm(
         FitProfileControl const & ctrl,
         afw::table::Schema & schema,
-        algorithms::AlgorithmControlMap const & others
+        algorithms::AlgorithmControlMap const & others,
+        bool isForced
     );
 
     /// @brief Return the control object
@@ -204,7 +207,8 @@ public:
         afw::geom::ellipses::Quadrupole & shape,
         afw::detection::Footprint const & footprint,
         afw::image::MaskedImage<PixelT> const & image,
-        afw::geom::Point2D const & center
+        afw::geom::Point2D const & center,
+        bool fixShape=false
     );
 
     /**
@@ -246,6 +250,23 @@ private:
         afw::geom::Point2D const & center
     ) const;
 
+    template <typename PixelT>
+    void _applyForced(
+        afw::table::SourceRecord & source,
+        afw::image::Exposure<PixelT> const & exposure,
+        afw::geom::Point2D const & center,
+        afw::table::SourceRecord const & reference,
+        afw::geom::AffineTransform const & refToMeas
+    ) const;
+
+    template <typename PixelT>
+    void _fitPsfFactor(
+        afw::table::SourceRecord & source,
+        afw::image::Exposure<PixelT> const & exposure,
+        afw::geom::Point2D const & center,
+        FitPsfModel const & psfModel
+    ) const;
+
     LSST_MEAS_ALGORITHM_PRIVATE_INTERFACE(FitProfileAlgorithm);
 
     afw::table::KeyTuple< afw::table::Flux > _fluxKeys;
@@ -264,9 +285,12 @@ private:
 inline PTR(FitProfileAlgorithm) FitProfileControl::makeAlgorithm(
     afw::table::Schema & schema,
     PTR(daf::base::PropertyList) const & metadata,
-    algorithms::AlgorithmControlMap const & others
+    algorithms::AlgorithmControlMap const & others,
+    bool isForced
 ) const {
-    return boost::static_pointer_cast<FitProfileAlgorithm>(_makeAlgorithm(schema, metadata, others));
+    return boost::static_pointer_cast<FitProfileAlgorithm>(
+        _makeAlgorithm(schema, metadata, others, isForced)
+    );
 }
 
 }}}} // namespace lsst::meas::extensions::multiShapelet

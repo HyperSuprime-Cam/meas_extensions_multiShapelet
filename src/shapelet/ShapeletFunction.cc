@@ -132,8 +132,8 @@ ShapeletFunction & ShapeletFunction::operator=(ShapeletFunction const & other) {
     return *this;
 }
 
-void ShapeletFunction::normalize() {
-    _coefficients.deep() /= evaluate().integrate();
+void ShapeletFunction::normalize(double value) {
+    _coefficients.deep() /= (evaluate().integrate() / value);
 }
 
 void ShapeletFunctionEvaluator::update(ShapeletFunction const & function) {

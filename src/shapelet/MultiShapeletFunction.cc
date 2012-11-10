@@ -30,8 +30,8 @@
 
 namespace lsst { namespace shapelet {
 
-void MultiShapeletFunction::normalize() {
-    double integral = evaluate().integrate();
+void MultiShapeletFunction::normalize(double value) {
+    double integral = evaluate().integrate() / value;
     for (ElementList::iterator i = _elements.begin(); i != _elements.end(); ++i) {
         i->getCoefficients().deep() /= integral;
     }
