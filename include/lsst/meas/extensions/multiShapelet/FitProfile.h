@@ -76,10 +76,8 @@ public:
         usePixelWeights(false), badMaskPlanes(), maxBadPixelFraction(0.1),
         growFootprint(5), radiusInputFactor(4.0)
     {
-        badMaskPlanes.push_back("BAD");
+        badMaskPlanes.push_back("EDGE");
         badMaskPlanes.push_back("SAT");
-        badMaskPlanes.push_back("INTRP");
-        badMaskPlanes.push_back("CR");
     }
 
 private:

@@ -59,10 +59,8 @@ public:
         expName("multishapelet.exp"), devName("multishapelet.dev"), psfName("multishapelet.psf"),
         usePixelWeights(false), badMaskPlanes(), growFootprint(5), radiusInputFactor(4.0)
     {
-        badMaskPlanes.push_back("BAD");
+        badMaskPlanes.push_back("EDGE");
         badMaskPlanes.push_back("SAT");
-        badMaskPlanes.push_back("INTRP");
-        badMaskPlanes.push_back("CR");
     }
 
 private:
