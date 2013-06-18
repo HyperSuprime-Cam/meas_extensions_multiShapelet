@@ -411,6 +411,15 @@ void FitProfileAlgorithm::_applyForced(
             "Cannot run FitProfileAlgorithm without a PSF."
         );
     }
+    if (source.getPsfFluxFlag()) {
+        // The PSF likely has problems, which will cause us to chase our tail for a long time and use an
+        // awful lot of memory in the process.  Better to just bail.
+        throw LSST_EXCEPT(
+            pex::exceptions::RuntimeErrorException,
+            "PSF flux failed; suspect galaxy modeling will be problematic."
+        );
+    }
+
     FitPsfModel psfModel(*_psfCtrl, source);
     if (psfModel.hasFailed() || !(psfModel.ellipse.getArea() > 0.0)) {
         throw LSST_EXCEPT(
