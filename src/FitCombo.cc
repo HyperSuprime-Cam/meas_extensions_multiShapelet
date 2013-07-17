@@ -148,7 +148,7 @@ namespace {
 void buildComponentModel(
     FitProfileModel const & component,
     FitPsfModel const & psfModel,
-    shapelet::ModelBuilder & builder,
+    shapelet::ModelBuilder<double> & builder,
     ModelInputHandler const & inputs,
     ndarray::Array<double,1,1> const & output,
     double weight = 1.0
@@ -287,7 +287,7 @@ void FitComboAlgorithm::_applyForced(
     );
     FitComboModel model(getControl());
     model.devFrac = reference.get(s.find<float>("devfrac").key);
-    shapelet::ModelBuilder builder(inputs.getX(), inputs.getY());
+    shapelet::ModelBuilder<double> builder(inputs.getX(), inputs.getY());
     ndarray::Array<double,1,1> matrix = ndarray::allocate(inputs.getSize());
     matrix.deep() = 0.0;
     buildComponentModel(expComponent, psfModel, builder, inputs, matrix, 1.0 - model.devFrac);
