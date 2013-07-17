@@ -69,7 +69,8 @@ public:
         ModelInputHandler const & inputs,
         MultiGaussian const & multiGaussian,
         double minRadius=1E-8,
-        double minAxisRatio=1E-8
+        double minAxisRatio=1E-8,
+        bool useApproximateExp=false
     );
 
     MultiGaussianObjective(
@@ -78,7 +79,8 @@ public:
         MultiGaussian const & psfMultiGaussian,
         afw::geom::ellipses::Quadrupole const & psfEllipse,
         double minRadius=1E-8,
-        double minAxisRatio=1E-8
+        double minAxisRatio=1E-8,
+        bool useApproximateExp=false
     );
 
 private:

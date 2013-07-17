@@ -52,6 +52,7 @@ public:
                        " when shapelets coefficients are fit and ellipses are held fixed."
     );
     LSST_CONTROL_FIELD(initialRadius, double, "Initial radius of inner component in pixels");
+    LSST_CONTROL_FIELD(useApproximateExp, bool, "Use fast approximate exponential (good to ~1E-4)");
 
     PTR(FitPsfControl) clone() const { return boost::static_pointer_cast<FitPsfControl>(_clone()); }
 
@@ -67,7 +68,7 @@ public:
     FitPsfControl() :
         algorithms::AlgorithmControl("multishapelet.psf", 2.0),
         innerOrder(2), outerOrder(2), minRadius(0.1), minAxisRatio(0.1),
-        radiusRatio(2.0), peakRatio(0.1), initialRadius(1.5)
+        radiusRatio(2.0), peakRatio(0.1), initialRadius(1.5), useApproximateExp(false)
     {}
 
 private:
@@ -119,8 +120,8 @@ struct FitPsfModel {
         ndarray::Array<double const,1,1> const & parameters
     );
 
-    /// @brief Construct by extracting saved values from a SourceRecord.
-    FitPsfModel(FitPsfControl const & ctrl, afw::table::SourceRecord const & source);
+    /// @brief Construct by extracting saved values from a Record.
+    FitPsfModel(FitPsfControl const & ctrl, afw::table::BaseRecord const & source);
 
     /// @brief Deep copy constructor.
     FitPsfModel(FitPsfModel const & other);
@@ -212,6 +213,20 @@ public:
         afw::detection::Psf const & psf,
         afw::geom::Point2D const & center
     );
+
+    /**
+     *  @brief Fit a PSF object evaluated at a point, returning a FitPsfModel
+     *         and saving the to the given record.
+     *
+     *  @param[in] record         Record in which to save results
+     *  @param[in] psf            PSF object
+     *  @param[in] center         Point at which to evaluate the PSF
+     */
+    FitPsfModel apply(
+        afw::table::BaseRecord & record,
+        afw::detection::Psf const & psf,
+        afw::geom::Point2D const & center
+    ) const;
 
 private:
 

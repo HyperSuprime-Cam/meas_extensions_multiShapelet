@@ -42,6 +42,7 @@ public:
     LSST_CONTROL_FIELD(growFootprint, int, "Number of pixels to grow the footprint by.");
     LSST_CONTROL_FIELD(radiusInputFactor, double,
                        "Number of half-light radii used to determine the pixels to fit");
+    LSST_CONTROL_FIELD(useApproximateExp, bool, "Use fast approximate exponential (good to ~1E-4)");
 
     PTR(FitComboControl) clone() const {
         return boost::static_pointer_cast<FitComboControl>(_clone());
@@ -57,7 +58,8 @@ public:
     FitComboControl() :
         algorithms::AlgorithmControl("multishapelet.combo", 2.6),
         expName("multishapelet.exp"), devName("multishapelet.dev"), psfName("multishapelet.psf"),
-        usePixelWeights(false), badMaskPlanes(), growFootprint(5), radiusInputFactor(4.0)
+        usePixelWeights(false), badMaskPlanes(), growFootprint(5), radiusInputFactor(4.0),
+        useApproximateExp(false)
     {
         badMaskPlanes.push_back("EDGE");
         badMaskPlanes.push_back("SAT");

@@ -207,7 +207,7 @@ PTR(MultiGaussianObjective) FitProfileAlgorithm::makeObjective(
 ) {
     return boost::make_shared<MultiGaussianObjective>(
         inputs, ctrl.getMultiGaussian(), psfModel.getMultiGaussian(), psfModel.ellipse,
-        ctrl.minRadius, ctrl.minAxisRatio
+        ctrl.minRadius, ctrl.minAxisRatio, ctrl.useApproximateExp
     );
 }
 
@@ -290,7 +290,7 @@ void FitProfileAlgorithm::fitShapeletTerms(
     msf.normalize();
     ndarray::Array<double,1,1> vector = ndarray::allocate(inputs.getSize());
     vector.deep() = 0.0;
-    shapelet::ModelBuilder builder(inputs.getX(), inputs.getY());
+    shapelet::ModelBuilder<double> builder(inputs.getX(), inputs.getY(), ctrl.useApproximateExp);
     for (MSF::ElementList::const_iterator i = msf.getElements().begin(); i != msf.getElements().end(); ++i) {
         builder.update(i->getEllipse().getCore());
         builder.addModelVector(i->getOrder(), i->getCoefficients(), vector);

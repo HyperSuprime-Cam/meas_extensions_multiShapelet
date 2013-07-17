@@ -177,8 +177,9 @@ FitComboModel FitComboAlgorithm::apply(
     ModelInputHandler const & inputs
 ) {
     FitComboModel model(ctrl);
-    shapelet::ModelBuilder builder(inputs.getX(), inputs.getY());
+    typedef shapelet::MultiShapeletFunction MSF;
     ndarray::Array<double,2,2> matrixT = ndarray::allocate(2, inputs.getSize());
+    shapelet::ModelBuilder<double> builder(inputs.getX(), inputs.getY(), ctrl.useApproximateExp);
     ndarray::Array<double,2,-2> matrix(matrixT.transpose());
     matrixT.deep() = 0.0;
     buildComponentModel(expComponent, psfModel, builder, inputs, matrixT[0]);
