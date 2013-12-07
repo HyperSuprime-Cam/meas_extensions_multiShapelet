@@ -307,7 +307,7 @@ FitPsfModel FitPsfAlgorithm::apply(
     return apply(ctrl, inputs);
 }
 
-FitPsfModel FitPsfAlgorithm::apply(
+FitPsfModel FitPsfAlgorithm::fit(
     afw::table::BaseRecord & record,
     afw::detection::Psf const & psf,
     afw::geom::Point2D const & center
@@ -341,7 +341,7 @@ void FitPsfAlgorithm::_apply(
             "Cannot run FitPsfAlgorithm without a PSF."
         );
     }
-    apply(source, *exposure.getPsf(), center);
+    fit(source, *exposure.getPsf(), center);
 }
 
 PTR(algorithms::AlgorithmControl) FitPsfControl::_clone() const {

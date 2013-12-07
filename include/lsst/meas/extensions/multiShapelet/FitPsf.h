@@ -221,8 +221,10 @@ public:
      *  @param[in] record         Record in which to save results
      *  @param[in] psf            PSF object
      *  @param[in] center         Point at which to evaluate the PSF
+     *
+     * @note: renamed from apply to avoid colliding with static methods in SWIG.
      */
-    FitPsfModel apply(
+    FitPsfModel fit(
         afw::table::BaseRecord & record,
         afw::detection::Psf const & psf,
         afw::geom::Point2D const & center
