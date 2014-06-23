@@ -23,7 +23,7 @@
 #ifndef MULTISHAPELET_FitProfile_h_INCLUDED
 #define MULTISHAPELET_FitProfile_h_INCLUDED
 
-#include "lsst/meas/algorithms/ScaledFlux.h"
+#include "lsst/meas/algorithms/Algorithm.h"
 #include "lsst/meas/extensions/multiShapelet/FitPsf.h"
 #include "lsst/meas/extensions/multiShapelet/MultiGaussianRegistry.h"
 #include "lsst/meas/extensions/multiShapelet/MultiGaussianObjective.h"
@@ -141,12 +141,7 @@ struct FitProfileModel {
 
 };
 
-class FitProfileAlgorithm :
-        public algorithms::Algorithm
-#ifndef SWIG
-        , public algorithms::ScaledFlux
-#endif
-{
+class FitProfileAlgorithm : public algorithms::Algorithm {
 public:
 
     typedef FitProfileControl Control;
@@ -164,11 +159,6 @@ public:
     FitProfileControl const & getControl() const {
         return static_cast<FitProfileControl const &>(algorithms::Algorithm::getControl());
     }
-
-#ifndef SWIG
-    virtual afw::table::KeyTuple<afw::table::Flux> getFluxKeys(int n=0) const { return _fluxKeys; }
-    virtual ScaledFlux::KeyTuple getFluxCorrectionKeys(int n=0) const { return _fluxCorrectionKeys; }
-#endif
 
     /**
      *  @brief Return an Objective that can be used to fit the convolved model to an image.
@@ -258,18 +248,9 @@ private:
         afw::geom::AffineTransform const & refToMeas
     ) const;
 
-    template <typename PixelT>
-    void _fitPsfFactor(
-        afw::table::SourceRecord & source,
-        afw::image::Exposure<PixelT> const & exposure,
-        afw::geom::Point2D const & center,
-        FitPsfModel const & psfModel
-    ) const;
-
     LSST_MEAS_ALGORITHM_PRIVATE_INTERFACE(FitProfileAlgorithm);
 
     afw::table::KeyTuple< afw::table::Flux > _fluxKeys;
-    algorithms::ScaledFlux::KeyTuple _fluxCorrectionKeys;
     afw::table::Key< afw::table::Moments<double> > _ellipseKey;
     afw::table::Key< afw::table::Moments<double> > _psfEllipseKey;
     afw::table::Key< float > _chisqKey;
