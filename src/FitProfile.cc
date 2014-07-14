@@ -144,7 +144,6 @@ FitProfileAlgorithm::FitProfileAlgorithm(
             "flux of multi-Gaussian approximation to the profile, integrated to infinite radius"
         )
     ),
-    _fluxCorrectionKeys(ctrl.name, schema),
     _ellipseKey(
         schema.addField< afw::table::Moments<double> >(
             ctrl.name + ".ellipse",
@@ -374,26 +373,6 @@ void FitProfileAlgorithm::_apply(
     source.set(_flagMinRadiusKey, model.flagMinRadius);
     source.set(_flagMinAxisRatioKey, model.flagMinAxisRatio);
     source.set(_flagLargeAreaKey, model.flagLargeArea);
-
-    _fitPsfFactor(source, exposure, center, psfModel);
-}
-
-template <typename PixelT>
-void FitProfileAlgorithm::_fitPsfFactor(
-    afw::table::SourceRecord & source,
-    afw::image::Exposure<PixelT> const & exposure,
-    afw::geom::Point2D const & center,
-    FitPsfModel const & psfModel
-) const {
-    source.set(_fluxCorrectionKeys.psfFactorFlag, true);
-    PTR(afw::image::Image<afw::math::Kernel::Pixel>) psfImage = exposure.getPsf()->computeImage(center);
-    ModelInputHandler psfInputs(*psfImage, center, psfImage->getBBox(afw::image::PARENT));
-    MultiGaussianObjective::EllipseCore psfEllipse(psfModel.ellipse);
-    psfEllipse.scale(getControl().minInitialRadius);
-    FitProfileModel psfProfileModel = apply(getControl(), psfModel, psfEllipse, psfInputs);
-    source.set(_fluxCorrectionKeys.psfFactor, psfProfileModel.flux);
-    source.set(_psfEllipseKey, psfProfileModel.ellipse);
-    source.set(_fluxCorrectionKeys.psfFactorFlag, psfProfileModel.fluxFlag);
 }
 
 template <typename PixelT>
@@ -449,8 +428,6 @@ void FitProfileAlgorithm::_applyForced(
     source.set(_fluxKeys.flag, model.fluxFlag);
     source.set(_ellipseKey, model.ellipse);
     source.set(_chisqKey, model.chisq);
-
-    _fitPsfFactor(source, exposure, center, psfModel);
 }
 
 LSST_MEAS_ALGORITHM_PRIVATE_IMPLEMENTATION(FitProfileAlgorithm);

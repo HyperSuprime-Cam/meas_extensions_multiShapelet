@@ -6,6 +6,10 @@ import lsst.meas.algorithms
 
 algorithms = set(["multishapelet.psf", "multishapelet.exp", "multishapelet.dev", "multishapelet.combo"])
 
+for fieldName in ("multishapelet.exp.flux", "multishapelet.dev.flux", "multishapelet.combo.flux"):
+    lsst.meas.algorithms.getApCorrRegistry().insert(fieldName)
+del fieldName
+
 @lsst.pex.config.wrap(HybridOptimizerControl)
 class HybridOptimizerConfig(lsst.pex.config.Config):
     pass

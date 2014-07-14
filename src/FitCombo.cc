@@ -104,7 +104,6 @@ FitComboAlgorithm::FitComboAlgorithm(
             "combined flux of the linear combination of fixed-profile models"
         )
     ),
-    _fluxCorrectionKeys(ctrl.name, schema),
     _devFracKey(
         schema.addField<float>(
             ctrl.name + ".devfrac",
@@ -252,8 +251,6 @@ void FitComboAlgorithm::_apply(
     source.set(_fluxKeys.meas, model.flux);
     source.set(_fluxKeys.err, model.fluxErr);
     source.set(_fluxKeys.flag, false);
-
-    _fitPsfFactor(source, exposure, center, psfModel);
 }
 
 
@@ -305,32 +302,6 @@ void FitComboAlgorithm::_applyForced(
     source.set(_fluxKeys.meas, model.flux);
     source.set(_fluxKeys.err, model.fluxErr);
     source.set(_fluxKeys.flag, false);
-
-    _fitPsfFactor(source, exposure, center, psfModel);
-}
-
-template <typename PixelT>
-void FitComboAlgorithm::_fitPsfFactor(
-    afw::table::SourceRecord & source,
-    afw::image::Exposure<PixelT> const & exposure,
-    afw::geom::Point2D const & center,
-    FitPsfModel const & psfModel
-) const {
-    source.set(_fluxCorrectionKeys.psfFactorFlag, true);
-    PTR(afw::image::Image<afw::math::Kernel::Pixel>) psfImage = exposure.getPsf()->computeImage(center);
-    ModelInputHandler psfInputs(*psfImage, center, psfImage->getBBox(afw::image::PARENT));
-    FitProfileModel psfExpComponent(*_expComponentCtrl, source, true);
-    FitProfileModel psfDevComponent(*_devComponentCtrl, source, true);
-    if (psfExpComponent.fluxFlag || psfDevComponent.fluxFlag) {
-        return; // Don't bother trying linear components if one of the inputs failed.
-    }
-    assert(lsst::utils::isfinite(psfExpComponent.ellipse.getArea()));
-    assert(lsst::utils::isfinite(psfDevComponent.ellipse.getArea()));
-    FitComboModel psfProfileModel = apply(
-        getControl(), psfModel, psfExpComponent, psfDevComponent, psfInputs
-    );
-    source.set(_fluxCorrectionKeys.psfFactor, psfProfileModel.flux);
-    source.set(_fluxCorrectionKeys.psfFactorFlag, false); 
 }
 
 LSST_MEAS_ALGORITHM_PRIVATE_IMPLEMENTATION(FitComboAlgorithm);

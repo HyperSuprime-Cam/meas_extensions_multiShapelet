@@ -94,12 +94,7 @@ struct FitComboModel {
 
 };
 
-class FitComboAlgorithm :
-        public algorithms::Algorithm 
-#ifndef SWIG
-        , public algorithms::ScaledFlux
-#endif
-{
+class FitComboAlgorithm : public algorithms::Algorithm {
 public:
 
     typedef FitComboControl Control;
@@ -116,11 +111,6 @@ public:
     FitComboControl const & getControl() const {
         return static_cast<FitComboControl const &>(algorithms::Algorithm::getControl());
     }
-
-#ifndef SWIG
-    virtual afw::table::KeyTuple<afw::table::Flux> getFluxKeys(int n=0) const { return _fluxKeys; }
-    virtual ScaledFlux::KeyTuple getFluxCorrectionKeys(int n=0) const { return _fluxCorrectionKeys; }
-#endif
 
     template <typename PixelT>
     static ModelInputHandler adjustInputs(
@@ -159,18 +149,9 @@ private:
         afw::geom::AffineTransform const & refToMeas
     ) const;
 
-    template <typename PixelT>
-    void _fitPsfFactor(
-        afw::table::SourceRecord & source,
-        afw::image::Exposure<PixelT> const & exposure,
-        afw::geom::Point2D const & center,
-        FitPsfModel const & psfModel
-    ) const;
-
     LSST_MEAS_ALGORITHM_PRIVATE_INTERFACE(FitComboAlgorithm);
 
     afw::table::KeyTuple< afw::table::Flux > _fluxKeys;
-    algorithms::ScaledFlux::KeyTuple _fluxCorrectionKeys;
     afw::table::Key< float > _devFracKey;
     CONST_PTR(FitProfileControl) _expComponentCtrl;
     CONST_PTR(FitProfileControl) _devComponentCtrl;
