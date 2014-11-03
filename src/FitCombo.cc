@@ -306,4 +306,14 @@ void FitComboAlgorithm::_applyForced(
 
 LSST_MEAS_ALGORITHM_PRIVATE_IMPLEMENTATION(FitComboAlgorithm);
 
+#define INSTANTIATE_adjustInputs(PIXELT) \
+template \
+ModelInputHandler FitComboAlgorithm::adjustInputs(                      \
+    FitComboControl const &, FitPsfModel const &, FitProfileModel const &, FitProfileModel const &, \
+    afw::detection::Footprint const &, afw::image::MaskedImage<PIXELT> const &, \
+    afw::geom::Point2D const &)
+
+INSTANTIATE_adjustInputs(float);
+INSTANTIATE_adjustInputs(double);
+
 }}}} // namespace lsst::meas::extensions::multiShapelet

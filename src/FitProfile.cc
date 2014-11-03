@@ -432,4 +432,15 @@ void FitProfileAlgorithm::_applyForced(
 
 LSST_MEAS_ALGORITHM_PRIVATE_IMPLEMENTATION(FitProfileAlgorithm);
 
+#define INSTANTIATE_adjustInputs(PIXELT) \
+template \
+ModelInputHandler FitProfileAlgorithm::adjustInputs(                    \
+    FitProfileControl const&, FitPsfModel const&,                       \
+    afw::geom::ellipses::Quadrupole&, afw::detection::Footprint const&, \
+    afw::image::MaskedImage<PIXELT, unsigned short, float> const&,      \
+    afw::geom::Point<double, 2> const&, bool)
+
+INSTANTIATE_adjustInputs(float);
+INSTANTIATE_adjustInputs(double);
+
 }}}} // namespace lsst::meas::extensions::multiShapelet
