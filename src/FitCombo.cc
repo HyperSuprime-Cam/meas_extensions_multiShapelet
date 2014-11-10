@@ -306,4 +306,26 @@ void FitComboAlgorithm::_applyForced(
 
 LSST_MEAS_ALGORITHM_PRIVATE_IMPLEMENTATION(FitComboAlgorithm);
 
+template
+ModelInputHandler FitComboAlgorithm::adjustInputs(
+    FitComboControl const & ctrl,
+    FitPsfModel const & psfModel,
+    FitProfileModel const & expComponent,
+    FitProfileModel const & devComponent,
+    afw::detection::Footprint const & footprint,
+    afw::image::MaskedImage< float > const & image,
+    afw::geom::Point2D const & center
+						  );
+
+template
+ModelInputHandler FitComboAlgorithm::adjustInputs(
+    FitComboControl const & ctrl,
+    FitPsfModel const & psfModel,
+    FitProfileModel const & expComponent,
+    FitProfileModel const & devComponent,
+    afw::detection::Footprint const & footprint,
+    afw::image::MaskedImage< double > const & image,
+    afw::geom::Point2D const & center
+						  );
+
 }}}} // namespace lsst::meas::extensions::multiShapelet
