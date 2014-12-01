@@ -97,7 +97,7 @@ FitPsfModel::FitPsfModel(FitPsfControl const & ctrl, afw::table::BaseRecord cons
         outer.deep() = source.get(outerKey)[ndarray::view(0, outer.getSize<0>())];
     }
     chisq = source.get(s.find< float >("chisq").key);
-    ellipse = source.get(s.find< afw::table::Moments<float> >("ellipse").key);
+    ellipse = source.get(s.find< afw::table::Moments<double> >("ellipse").key);
     failedMaxIter = source.get(s.find<afw::table::Flag>("flags.maxiter").key);
     failedTinyStep = source.get(s.find<afw::table::Flag>("flags.tinystep").key);
     failedMinRadius = source.get(s.find<afw::table::Flag>("flags.constraint.r").key);
@@ -178,7 +178,7 @@ FitPsfAlgorithm::FitPsfAlgorithm(FitPsfControl const & ctrl, afw::table::Schema 
             shapelet::computeSize(ctrl.outerOrder)
         )),
     _ellipseKey(
-        schema.addField< afw::table::Moments<float> >(
+        schema.addField< afw::table::Moments<double> >(
             ctrl.name + ".ellipse",
             "Ellipse corresponding to the inner expansion"
         )),

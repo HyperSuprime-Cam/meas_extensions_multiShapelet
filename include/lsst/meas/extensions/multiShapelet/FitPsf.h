@@ -243,7 +243,7 @@ private:
 
     afw::table::Key< afw::table::Array<float> > _innerKey;
     afw::table::Key< afw::table::Array<float> > _outerKey;
-    afw::table::Key< afw::table::Moments<float> > _ellipseKey;
+    afw::table::Key< afw::table::Moments<double> > _ellipseKey;
     afw::table::Key<float> _chisqKey;
     afw::table::Key<float> _integralKey;
     afw::table::Key< afw::table::Flag > _flagKey;
