@@ -67,7 +67,7 @@ public:
 
     FitPsfControl() :
         algorithms::AlgorithmControl("multishapelet.psf", 2.0),
-        innerOrder(2), outerOrder(2), minRadius(0.1), minAxisRatio(0.1),
+        innerOrder(2), outerOrder(1), minRadius(0.1), minAxisRatio(0.1),
         radiusRatio(2.0), peakRatio(0.1), initialRadius(1.5), useApproximateExp(false)
     {}
 
